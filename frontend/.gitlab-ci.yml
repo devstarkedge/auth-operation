@@ -1,0 +1,64 @@
+image: node:latest
+
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+variables:
+  AWS_DEFAULT_REGION: us-east-2
+  BUCKET_NAME: fusionauth-demo
+  ENV_PROD: https://fusionauth-demo.domain.com
+  CLOUDFRONT_ID: some-id
+
+install:
+  stage: install
+  script:
+    - npm ci --only=production
+  artifacts:
+    paths:
+      - node_modules/
+  cache:
+    key: node
+    paths:
+      - node_modules/
+
+test:
+  stage: test
+  dependencies:
+    - install
+  script:
+    - chmod +x ./cicd/test.sh
+    - ./cicd/test.sh
+
+build:
+  stage: build
+  dependencies:
+    - install
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - build/
+  cache:
+    key: build
+    paths:
+      - build/
+
+deploy_prod:
+  image: "python:latest"
+  stage: deploy
+  dependencies:
+    - build
+  before_script:
+    - pip install awscli
+  script:
+    - aws s3 sync --cache-control 'max-age=604800' --delete dist/ s3://${BUCKET_NAME}
+    - aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_ID} --paths "/*"
+  environment:
+    name: Production
+    url: ${ENV_PROD}
+  when: manual
+  only:
+  - master

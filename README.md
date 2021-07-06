@@ -18,3 +18,9 @@ This project contains an example project that illustrates using AUth with NodeJS
 * `git clone
 * `./server npm install`
 * `./frontend npm install`
+
+## Running / Development
+* `./server npm start`
+  * Debug mode `./server node --inspect server.js`
+* `./frontend npm start`
+  * This should open a browser to [http://localhost:3000](http://localhost:3000).
